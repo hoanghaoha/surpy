@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "surpy"
+version = "0.1.0"
+description = "Tools for working with survey-formatted datasets"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+authors = [{ name = "Ha Hoang Hao", email = "hhhao.vn@gmail.com" }]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "ruff",
+  "coverage",
+]
+
+[project.urls]
+Homepage = "https://github.com/hoanghaoha/surpy"
+Repository = "https://github.com/hoanghaoha/surpy"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/surpy"]
