@@ -1,3 +1,4 @@
+import polars as pl
 from abc import ABC, abstractmethod
 
 from .single_strategy import SingleStrategy
@@ -14,11 +15,11 @@ class QuestionStrategy(ABC):
         pass
 
     @abstractmethod
-    def options_base_count(self) -> dict[str, int]:
+    def options_base_count(self) -> pl.DataFrame:
         pass
 
     @abstractmethod
-    def descriptive_statistic(self) -> str:
+    def descriptive_statistic(self) -> pl.DataFrame:
         pass
 
 
@@ -27,8 +28,6 @@ class QuestionStrategyFactory:
         QuestionType.Single: SingleStrategy,
         QuestionType.Multiple: "MultipleStrategyHolder",
         QuestionType.Rank: "RankStrategyHolder",
-        QuestionType.MatrixSingle: "MatrixSingleStrategyHolder",
-        QuestionType.MatrixMultiple: "MatrixMultipleStrategyHolder",
         QuestionType.Open: "OpenStrategyHolder",
     }
 

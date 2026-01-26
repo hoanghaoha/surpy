@@ -1,3 +1,5 @@
+import polars as pl
+
 from .strategy import QuestionStrategy
 from ..option import Option
 from ..response import Response
@@ -14,13 +16,8 @@ class SingleStrategy(QuestionStrategy):
     def missing(self) -> int:
         return len(self.responses) - self.base_count()
 
-    def options_base_count(self) -> dict[str, int]:
-        return {option.id: option.base_count() for option in self.options}
+    def options_base_count(self) -> pl.DataFrame:
+        pass
 
-    def descriptive_statistic(self) -> str:
-        return f""""
-            Base: {self.base_count()}
-            Missing: {self.missing()}
-            Description:
-                {[f"{opt}: {opt_base_count}" for opt, opt_base_count in self.options_base_count().items()]}
-        """
+    def descriptive_statistic(self) -> pl.DataFrame:
+        pass
