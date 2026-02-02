@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
-from .const import QuestionType
+from ..config import QuestionType
 from .option import Option
-from .response import Response
 from .strategies.strategy import QuestionStrategyFactory
 
 
@@ -12,7 +11,8 @@ class Question:
     type: QuestionType
     text: str
     options: list[Option]
-    responses: list[Response]
+    data: list
+    response_ids: list[str]
 
     @property
     def _strategy(self):
