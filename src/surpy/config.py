@@ -4,6 +4,7 @@ from enum import Enum
 class QuestionType(Enum):
     Single = "single_choice"
     Multiple = "multiple_choice"
+    Number = "number"
     Rank = "rank"
     Text = "text"
     MatrixSingle = "matrix_single_choice"
@@ -13,3 +14,4 @@ class QuestionType(Enum):
 class Seperator(Enum):
     Multiple = "_"
     Matrix = "."
+    Rank = "#"
