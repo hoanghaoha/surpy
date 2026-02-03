@@ -8,7 +8,7 @@ from .strategies.strategy import QuestionStrategyFactory
 @dataclass
 class Question:
     id: str
-    type: QuestionType
+    qtype: QuestionType
     text: str
     options: list[Option]
     data: list
@@ -16,4 +16,4 @@ class Question:
 
     @property
     def _strategy(self):
-        return QuestionStrategyFactory.get_strategy(self.type)
+        return QuestionStrategyFactory.get_strategy(self.qtype)
