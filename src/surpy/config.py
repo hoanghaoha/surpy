@@ -11,7 +11,8 @@ class QuestionType(Enum):
     MatrixMultiple = "matrix_multiple_choice"
 
 
-class Seperator(Enum):
+class Identifier(str, Enum):
     Multiple = "_"
     Matrix = "."
     Rank = "#"
+    Id = "ID"
