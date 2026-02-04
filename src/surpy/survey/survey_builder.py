@@ -6,37 +6,37 @@ from .survey import Survey
 from ..errors import FileTypeError, DataError
 from ..questions.question import Question
 from ..questions.option import Option
-from ..config import Seperator
+from ..config import Identifier
 
 
 def _load_data_single(data_dict: dict, var: str, data: list):
-    data_dict[var] = data
+    data_dict[var] = {1: data}
 
 
 def _load_data_multiple(data_dict: dict, var: str, data: list):
-    root_var, sub_var = var.split(Seperator.Multiple)
+    root_var, var_index = var.split(Identifier.Multiple)
     data_dict.setdefault(root_var, {})
-    data_dict[root_var][sub_var] = data
+    data_dict[root_var][int(var_index)] = data
 
 
 def _load_data_matrix_single(data_dict: dict, var: str, data: list):
-    root_var, sub_var = var.split(Seperator.Matrix)
+    root_var, var_index = var.split(Identifier.Matrix)
     data_dict.setdefault(root_var, {})
-    data_dict[root_var][sub_var] = data
+    data_dict[root_var][int(var_index)] = data
 
 
 def _load_data_matrix_multiple(data_dict: dict, var: str, data: list):
-    root_var, sub_var = var.split(Seperator.Matrix)
-    matrix_part, multiple_part = sub_var.split(Seperator.Multiple)
+    root_var, sub_var = var.split(Identifier.Matrix)
+    matrix_index, multiple_index = sub_var.split(Identifier.Multiple)
     data_dict.setdefault(root_var, {})
-    data_dict[root_var].setdefault(matrix_part, {})
-    data_dict[root_var][matrix_part][multiple_part] = data
+    data_dict[root_var].setdefault(matrix_index, {})
+    data_dict[root_var][int(matrix_index)][int(multiple_index)] = data
 
 
 def _load_data_rank(data_dict: dict, var: str, data: list):
-    root_var, sub_var = var.split(Seperator.Rank)
+    root_var, var_index = var.split(Identifier.Rank)
     data_dict.setdefault(root_var, {})
-    data_dict[root_var][sub_var] = data
+    data_dict[root_var][int(var_index)] = data
 
 
 class SurveyBuilder:
@@ -68,7 +68,7 @@ class SurveyBuilder:
                     for i, op in enumerate(metadata["options"], 1)
                 ],
                 data=data_dict[id],
-                response_ids=data_dict["ID"],
+                response_ids=data_dict[Identifier.Id][1],
             )
             for id, metadata in metadata_dict.items()
         ]
@@ -79,23 +79,23 @@ class SurveyBuilder:
         """
         Return dictionary with id as key and data as value.
         {
-            "Q1": [1, 2, 3, 2],
+            "Q1": {1: [1, 2, 3, 2],},
             "Q2": {
-                "1": [0, 1, 0, 0],
-                "2": [1, 0, 0, 1],
+                1: [0, 1, 0, 0],
+                2: [1, 0, 0, 1],
             },
             "Q3": {
-                "1": [1, 2, 3, 4],
-                "2": [3, 4, 2 1],
+                1: [1, 2, 3, 4],
+                2: [3, 4, 2 1],
             },
             "Q4": {
-                "1": {
-                    "1": [0, 0, 1, 0],
-                    "2": [0, 1, 0, 1],
+                1: {
+                    1: [0, 0, 1, 0],
+                    2: [0, 1, 0, 1],
                 },
-                "2": {
-                    "1": [1, 1, 1, 0],
-                    "2": [1, 0, 0, 1],
+                2: {
+                    1: [1, 1, 1, 0],
+                    2: [1, 0, 0, 1],
                 }
             }
         }
@@ -103,19 +103,19 @@ class SurveyBuilder:
 
         raw_dict = pl.read_excel(self.data_path).to_dict(as_series=False)
 
-        if "ID" not in raw_dict.keys():
+        if Identifier.Id not in raw_dict.keys():
             raise DataError("Could not find ID variable")
 
         data_dict = {}
 
         for var, var_data in raw_dict.items():
-            if Seperator.Multiple in var and Seperator.Matrix not in var:
+            if Identifier.Multiple in var and Identifier.Matrix not in var:
                 _load_data_multiple(data_dict, var, var_data)
-            elif Seperator.Multiple not in var and Seperator.Matrix in var:
+            elif Identifier.Multiple not in var and Identifier.Matrix in var:
                 _load_data_matrix_single(data_dict, var, var_data)
-            elif Seperator.Multiple in var and Seperator.Matrix in var:
+            elif Identifier.Multiple in var and Identifier.Matrix in var:
                 _load_data_matrix_multiple(data_dict, var, var_data)
-            elif Seperator.Rank in var:
+            elif Identifier.Rank in var:
                 _load_data_rank(data_dict, var, var_data)
             else:
                 _load_data_single(data_dict, var, var_data)
@@ -125,7 +125,7 @@ class SurveyBuilder:
     def _load_metadata(self) -> dict[str, dict]:
         """
         Return a dictionary with id as key and metadata as value.
-        {"Q1": {"text": "question 1", options: []}
+        {"Q1": {"id": "Q1", "type": "single_choice", "text": "question 1", "options": ["A", "B", "C"]}
         """
 
         with open(self.metadata_path, "r") as f:
@@ -135,7 +135,7 @@ class SurveyBuilder:
                 metadata = json.load(f)
             else:
                 raise DataError(
-                    "Can not identify metadata type: {self.metadata_path.split('.')[-1]}"
+                    f"Can not identify metadata type: {self.metadata_path.split('.')[-1]}"
                 )
 
         return {

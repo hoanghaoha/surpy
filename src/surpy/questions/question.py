@@ -11,7 +11,7 @@ class Question:
     qtype: QuestionType
     text: str
     options: list[Option]
-    data: list | dict
+    data: dict
     response_ids: list[str]
 
     @property
