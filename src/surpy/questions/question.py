@@ -2,7 +2,18 @@ from dataclasses import dataclass
 
 from ..config import QuestionType
 from .option import Option
-from .strategies.strategy import QuestionStrategyFactory
+from . import strategies
+
+
+_strategies = {
+    QuestionType.Single: strategies.SingleStrategy,
+    QuestionType.Multiple: strategies.MultipleStrategy,
+    QuestionType.MatrixSingle: strategies.MatrixSingleStrategy,
+    QuestionType.MatrixMultiple: strategies.MatrixMultipleStrategy,
+    QuestionType.Number: strategies.NumberStrategy,
+    QuestionType.Rank: strategies.RankStrategy,
+    QuestionType.Text: strategies.TextStrategy,
+}
 
 
 @dataclass
@@ -16,4 +27,4 @@ class Question:
 
     @property
     def _strategy(self):
-        return QuestionStrategyFactory.get_strategy(self.qtype)
+        return _strategies[self.qtype](**self.__dict__)
