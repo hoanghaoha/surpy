@@ -7,6 +7,40 @@ from .strategy import QuestionStrategy
 from ...config import Identifier
 
 
+def _validate_data(
+    data: dict[int, list], options: list[Option], response_ids: list
+) -> None:
+    if len(data) != len(options):
+        raise DataError(
+            "Length of Multiple question must be equal to length of Multiple question options."
+        )
+    if not all([len(v) != len(response_ids) for v in data.values()]):
+        raise DataError(
+            "Length of Multiple question data must be equal to lenght of response ids."
+        )
+    if not all([isinstance(k, int) for k in data.keys()]):
+        raise DataError("Key of Multiple question must be integer.")
+
+
+def _to_number_data(
+    data: dict[int, list], option_mapping: dict[int, str]
+) -> dict[str, list[int]]:
+    sorted_data = dict(sorted(data.items(), key=lambda x: x[0]))
+    return {
+        option_mapping[op_index]: [1 if d else 0 for d in op_data]
+        for op_index, op_data in sorted_data.items()
+    }
+
+
+def _to_text_data(data: dict[int, list], option_mapping: dict[int, str]):
+    return {
+        option_mapping[op_index]: [
+            option_mapping[op_index] if d else "" for d in op_data
+        ]
+        for op_index, op_data in data.items()
+    }
+
+
 class MultipleStrategy(QuestionStrategy):
     def __init__(
         self,
@@ -15,66 +49,33 @@ class MultipleStrategy(QuestionStrategy):
         self.id: str = kwargs["id"]
         self.text: str = kwargs["text"]
         self.options: list[Option] = kwargs["options"]
-        self.response_ids: dict = kwargs["response_ids"]
-        self._validate_data(kwargs["data"])
+        self.response_ids: list = kwargs["response_ids"]
+        _validate_data(
+            kwargs["data"],
+            self.options,
+            self.response_ids,
+        )
+        self.raw_data: dict[int, list] = kwargs["data"]
 
-    def _validate_data(self, data: dict[int, list]) -> None:
-        if len(data) != len(self.options):
-            raise DataError(
-                "Length of Multiple question must be equal to length of Multiple question options."
-            )
-        if not all([len(v) != len(self.response_ids) for v in data.values()]):
-            raise DataError(
-                "Length of Multiple question data must be equal to lenght of response ids."
-            )
-        if not all([isinstance(k, int) for k in data.keys()]):
-            raise DataError("Key of Multiple question must be integer.")
-
-        sorted_data = dict(sorted(data.items(), key=lambda x: x[0]))
-
-        self.data: dict[str, list[str | int | None]] = {
-            {op.index: op.text for op in self.options}[op_index]: [
-                1 if d else 0 for d in op_data
-            ]
-            for op_index, op_data in sorted_data.items()
-        }
+    def _option_mapping(self, _type: Literal["t2n", "n2t"]) -> dict:
+        if _type == "t2n":
+            return {op.text: op.index for op in self.options}
+        return {op.index: op.text for op in self.options}
 
     @property
-    def dtype(self) -> Literal["number", "text"]:
-        if all([isinstance(d, int) for var in self.data.values() for d in var]):
-            return "number"
-        return "text"
+    def number_data(self) -> dict[str, list]:
+        return _to_number_data(self.raw_data, self._option_mapping("n2t"))
 
-    def get_option(self, value: int | str):
-        if isinstance(value, int):
-            return {op.index: op for op in self.options}[value]
-        if isinstance(value, str):
-            return {op.text: op for op in self.options}[value]
+    @property
+    def text_data(self) -> dict[str, list]:
+        return _to_text_data(self.raw_data, self._option_mapping("n2t"))
 
-    def change_dtype(self, to: Literal["number", "text"]):
-        if self.dtype == "text" and to == "number":
-            self.data = {
-                op_text: [1 if d else 0 for d in op_data]
-                for op_text, op_data in self.data.items()
-            }
-        if self.dtype == "number" and to == "text":
-            self.data = {
-                op_text: [op_text if d else "" for d in op_data]
-                for op_text, op_data in self.data.items()
-            }
-
-    def get_df(self) -> pl.DataFrame:
-        return pl.DataFrame({**{Identifier.Id: self.response_ids, **self.data}})
+    def get_df(self, dtype: Literal["number", "text"]) -> pl.DataFrame:
+        data = self.text_data if dtype == "text" else self.number_data
+        return pl.DataFrame({**{Identifier.Id: self.response_ids, **data}})
 
     def describe(self) -> pl.DataFrame:
-        current_dtype = self.dtype
-
-        if current_dtype == "number":
-            self.change_dtype("text")
-
-        df = self.get_df()
-
-        self.change_dtype(current_dtype)
+        df = self.get_df(dtype="number")
 
         describe_df = (
             df.unpivot(index=Identifier.Id, variable_name=self.id)

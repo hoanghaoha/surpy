@@ -39,6 +39,27 @@ def _load_data_rank(data_dict: dict, var: str, data: list):
     data_dict[root_var][int(var_index)] = data
 
 
+def _parse_raw_data_dict(raw_data_dict: dict[str, list]) -> dict[str, dict]:
+    if Identifier.Id not in raw_data_dict.keys():
+        raise DataError("Could not find ID variable")
+
+    data_dict = {}
+
+    for var, var_data in raw_data_dict.items():
+        if Identifier.Multiple in var and Identifier.Matrix not in var:
+            _load_data_multiple(data_dict, var, var_data)
+        elif Identifier.Multiple not in var and Identifier.Matrix in var:
+            _load_data_matrix_single(data_dict, var, var_data)
+        elif Identifier.Multiple in var and Identifier.Matrix in var:
+            _load_data_matrix_multiple(data_dict, var, var_data)
+        elif Identifier.Rank in var:
+            _load_data_rank(data_dict, var, var_data)
+        else:
+            _load_data_single(data_dict, var, var_data)
+
+    return data_dict
+
+
 class SurveyBuilder:
     def __init__(self, data_path: str, metadata_path: str):
         self.data_path = data_path
@@ -64,7 +85,7 @@ class SurveyBuilder:
                 qtype=metadata["type"],
                 text=metadata["text"],
                 options=[
-                    Option(question_id=id, index=i, text=op)
+                    Option(index=i, text=op)
                     for i, op in enumerate(metadata["options"], 1)
                 ],
                 data=data_dict[id],
@@ -101,26 +122,11 @@ class SurveyBuilder:
         }
         """
 
-        raw_dict = pl.read_excel(self.data_path).to_dict(as_series=False)
+        raw_data_dict: dict[str, list] = pl.read_excel(self.data_path).to_dict(
+            as_series=False
+        )
 
-        if Identifier.Id not in raw_dict.keys():
-            raise DataError("Could not find ID variable")
-
-        data_dict = {}
-
-        for var, var_data in raw_dict.items():
-            if Identifier.Multiple in var and Identifier.Matrix not in var:
-                _load_data_multiple(data_dict, var, var_data)
-            elif Identifier.Multiple not in var and Identifier.Matrix in var:
-                _load_data_matrix_single(data_dict, var, var_data)
-            elif Identifier.Multiple in var and Identifier.Matrix in var:
-                _load_data_matrix_multiple(data_dict, var, var_data)
-            elif Identifier.Rank in var:
-                _load_data_rank(data_dict, var, var_data)
-            else:
-                _load_data_single(data_dict, var, var_data)
-
-        return data_dict
+        return _parse_raw_data_dict(raw_data_dict)
 
     def _load_metadata(self) -> dict[str, dict]:
         """

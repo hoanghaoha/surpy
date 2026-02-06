@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from ..config import QuestionType
 from .option import Option
 from . import strategies
+from ..config import QuestionType
 
 
 _strategies = {
