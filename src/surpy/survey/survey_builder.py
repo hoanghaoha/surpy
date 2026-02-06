@@ -85,7 +85,7 @@ class SurveyBuilder:
                 qtype=metadata["type"],
                 text=metadata["text"],
                 options=[
-                    Option(question_id=id, index=i, text=op)
+                    Option(index=i, text=op)
                     for i, op in enumerate(metadata["options"], 1)
                 ],
                 data=data_dict[id],
