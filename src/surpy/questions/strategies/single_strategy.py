@@ -1,4 +1,4 @@
-from typing import Literal, Any
+from typing import Literal
 import polars as pl
 
 from .strategy import QuestionStrategy
@@ -24,13 +24,19 @@ def _validate_data(data: dict, response_ids: list) -> None:
 
 
 def _to_number_data(
-    data: list[Any], option_mapping: dict[str, int]
+    data: list[str | int | float | None], option_mapping: dict[str, int]
 ) -> list[int | None]:
-    str_data: list[str] = [str(d) for d in data]
-    return [{**option_mapping, **{"None": None}}.get(d, None) for d in str_data]
+    if all([isinstance(d, (int, float, type(None))) for d in data]):
+        return [int(d) if d is not None else None for d in data]
+    return [
+        {**option_mapping, **{"None": None}}.get(d, None)
+        for d in [str(d) for d in data]
+    ]
 
 
-def _to_text_data(data: list[Any], option_mapping: dict[int, str]) -> list[str | None]:
+def _to_text_data(
+    data: list[int | None], option_mapping: dict[int, str]
+) -> list[str | None]:
     number_data: list[int] = [int(d) if d is not None else 0 for d in data]
     return [{**option_mapping, **{0: None}}.get(d, None) for d in number_data]
 
@@ -45,19 +51,26 @@ class SingleStrategy(QuestionStrategy):
         self.options: list[Option] = kwargs["options"]
         self.response_ids: list = kwargs["response_ids"]
         _validate_data(kwargs["data"], self.response_ids)
-        self.data = _to_number_data(kwargs["data"], self._option_mapping("t2n"))
-        self.text_data = _to_text_data(self.data, self._option_mapping("n2t"))
+        self.raw_data: list[str | int | float | None] = kwargs["data"][1]
 
     def _option_mapping(self, _type: Literal["t2n", "n2t"]) -> dict:
         if _type == "t2n":
             return {op.text: op.index for op in self.options}
         return {op.index: op.text for op in self.options}
 
+    @property
+    def number_data(self) -> list[int | None]:
+        return _to_number_data(self.raw_data, self._option_mapping("t2n"))
+
+    @property
+    def text_data(self):
+        return _to_text_data(self.number_data, self._option_mapping("n2t"))
+
     def get_df(self, dtype: Literal["number", "text"]) -> pl.DataFrame:
         return pl.DataFrame(
             {
-                self.id: self.text_data if dtype == "text" else self.data,
                 Identifier.Id: self.response_ids,
+                self.id: self.text_data if dtype == "text" else self.number_data,
             }
         )
 
