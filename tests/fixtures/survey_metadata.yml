@@ -8,7 +8,7 @@ questions:
       - "Female"
   - id: "Q2"
     type: "number"
-    text: "Plase tell us your YOB"
+    text: "Please tell us your YOB"
   - id: "Q3"
     type: "single_choice"
     text: "Which city do you currently live in?"
