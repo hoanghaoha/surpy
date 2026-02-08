@@ -12,14 +12,18 @@ def _validate_data(
 ) -> None:
     if len(data) != len(options):
         raise DataError(
-            "Length of Multiple question must be equal to length of Multiple question options."
+            "Length of Multiple question must be equal to length of Multiple question options"
         )
-    if not all([len(v) != len(response_ids) for v in data.values()]):
+    if len(data.keys()) != len(options):
         raise DataError(
-            "Length of Multiple question data must be equal to lenght of response ids."
+            "Length of Multiple question data keys must be equal to lenght of options"
+        )
+    if not all([len(v) == len(response_ids) for v in data.values()]):
+        raise DataError(
+            "Length of Multiple question data must be equal to lenght of response ids"
         )
     if not all([isinstance(k, int) for k in data.keys()]):
-        raise DataError("Key of Multiple question must be integer.")
+        raise DataError("Key of Multiple question must be integer")
 
 
 def _to_number_data(
