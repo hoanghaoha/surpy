@@ -29,7 +29,7 @@ def _to_number_data(
     if all([isinstance(d, (int, float, type(None))) for d in data]):
         return [int(d) if d is not None else None for d in data]
     return [
-        {**option_mapping, **{"None": None}}.get(d, None)
+        {**option_mapping, **{"None": None, "": None}}.get(d, None)
         for d in [str(d) for d in data]
     ]
 
@@ -38,7 +38,7 @@ def _to_text_data(
     data: list[int | None], option_mapping: dict[int, str]
 ) -> list[str | None]:
     number_data: list[int] = [int(d) if d is not None else 0 for d in data]
-    return [{**option_mapping, **{0: None}}.get(d, None) for d in number_data]
+    return [{**option_mapping, **{0: ""}}.get(d, "") for d in number_data]
 
 
 class SingleStrategy(QuestionStrategy):
@@ -75,7 +75,7 @@ class SingleStrategy(QuestionStrategy):
         )
 
     def describe(self) -> pl.DataFrame:
-        df = self.get_df(dtype="number")
+        df = self.get_df(dtype="text")
 
         describe_df = (
             df.group_by(self.id)
@@ -86,6 +86,14 @@ class SingleStrategy(QuestionStrategy):
             .with_columns(
                 (pl.col("count") / pl.sum("count")).alias("percent"),
                 (pl.col("count") / pl.sum("count")).cum_sum().alias("cum_percent"),
+            )
+            .cast(
+                {
+                    self.id: pl.String,
+                    "count": pl.UInt32,
+                    "percent": pl.Float64,
+                    "cum_percent": pl.Float64,
+                }
             )
         )
 
