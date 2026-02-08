@@ -13,43 +13,94 @@ from ..config import Identifier
 
 def _load_data_single(survey_data: dict, question_code: str, question_data: list):
     question_id = question_code
+
+    if question_id in survey_data:
+        raise ValueError("Duplicate question code")
+
     survey_data[question_id] = {1: question_data}
 
 
 def _load_data_multiple(survey_data: dict, question_code: str, question_data: list):
-    question_id, multiple_index = question_code.split(Identifier.Multiple)
+    try:
+        question_id, multiple_index = question_code.split(Identifier.Multiple)
+        multiple_index = int(multiple_index)
+    except Exception as e:
+        raise ValueError(f"Invalid question code: {question_code}") from e
+
     survey_data.setdefault(question_id, {})
-    survey_data[question_id][int(multiple_index)] = question_data
+
+    if not isinstance(survey_data[question_id], dict):
+        raise TypeError(f"survey_data[{question_id}] must a a dict")
+
+    if multiple_index in survey_data[question_id]:
+        raise ValueError("Duplicate multiple index")
+
+    survey_data[question_id][multiple_index] = question_data
 
 
 def _load_data_matrix_single(
     survey_data: dict, question_code: str, question_data: list
 ):
-    question_id, matrix_index = question_code.split(Identifier.Matrix)
+    try:
+        question_id, matrix_index = question_code.split(Identifier.Matrix)
+        matrix_index = int(matrix_index)
+    except Exception as e:
+        raise ValueError(f"Invalid question code: {question_code}") from e
+
     survey_data.setdefault(question_id, {})
-    survey_data[question_id][int(matrix_index)] = question_data
+
+    if not isinstance(survey_data[question_id], dict):
+        raise TypeError(f"survey_data[{question_id}] must a a dict")
+
+    if matrix_index in survey_data[question_id]:
+        raise ValueError("Duplicate matrix index")
+
+    survey_data[question_id][matrix_index] = question_data
 
 
 def _load_data_matrix_multiple(
     survey_data: dict, question_code: str, question_data: list
 ):
-    question_id, sub_question_code = question_code.split(Identifier.Matrix)
-    matrix_index, multiple_index = sub_question_code.split(Identifier.Multiple)
-    matrix_index, multiple_index = int(matrix_index), int(multiple_index)
+    try:
+        question_id, sub_question_code = question_code.split(Identifier.Matrix)
+        matrix_index, multiple_index = sub_question_code.split(Identifier.Multiple)
+        matrix_index, multiple_index = int(matrix_index), int(multiple_index)
+    except Exception as e:
+        raise ValueError(f"Invalid question code: {question_code}") from e
+
     survey_data.setdefault(question_id, {})
     survey_data[question_id].setdefault(matrix_index, {})
+
+    if not isinstance(survey_data[question_id], dict):
+        raise TypeError(f"survey_data[{question_id}] must a a dict")
+
+    if not isinstance(survey_data[question_id][matrix_index], dict):
+        raise TypeError(f"survey_data[{question_id}][{matrix_index}] must a a dict")
+
+    if multiple_index in survey_data[question_id][matrix_index]:
+        raise ValueError("Duplicate matrix/ multiple index")
+
     survey_data[question_id][matrix_index][multiple_index] = question_data
 
 
 def _load_data_rank(survey_data: dict, question_code: str, question_data: list):
-    question_id, rank_index = question_code.split(Identifier.Rank)
+    try:
+        question_id, rank_index = question_code.split(Identifier.Rank)
+        rank_index = int(rank_index)
+    except Exception as e:
+        raise ValueError(f"Invalid question code: {question_code}") from e
+
     survey_data.setdefault(question_id, {})
-    survey_data[question_id][int(rank_index)] = question_data
+
+    if rank_index in survey_data[question_id]:
+        raise ValueError("Duplicate rank index")
+
+    survey_data[question_id][rank_index] = question_data
 
 
 def _load_survey_data(raw_data: dict[str, list]) -> dict[str, dict]:
     if Identifier.Id not in raw_data.keys():
-        raise DataError("Could not find ID columniable")
+        raise DataError("Could not find ID")
 
     survey_data = {}
 

@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class QuestionType(Enum):
+class QuestionType(StrEnum):
     Single = "single_choice"
     Multiple = "multiple_choice"
     Number = "number"
@@ -11,7 +11,7 @@ class QuestionType(Enum):
     MatrixMultiple = "matrix_multiple_choice"
 
 
-class Identifier(str, Enum):
+class Identifier(StrEnum):
     Multiple = "_"
     Matrix = "."
     Rank = "#"
