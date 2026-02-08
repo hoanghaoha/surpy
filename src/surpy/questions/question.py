@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .option import Option
 from . import strategies
@@ -21,10 +21,13 @@ class Question:
     id: str
     qtype: QuestionType
     text: str
-    options: list[Option]
     data: dict
     response_ids: list[str]
+    options: list[Option] = field(default_factory=list)
+    sub_items: list = field(default_factory=list)
 
     @property
     def _strategy(self):
+        if self.qtype in [QuestionType.MatrixSingle, QuestionType.MatrixMultiple]:
+            return _strategies[self.qtype](**self.__dict__)
         return _strategies[self.qtype](**self.__dict__)

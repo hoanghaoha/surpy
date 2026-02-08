@@ -172,12 +172,13 @@ class SurveyBuilder:
                 id := question_metadata["id"],
                 qtype=question_metadata["type"],
                 text=question_metadata["text"],
+                data=data[id],
+                response_ids=data[Identifier.Id][1],
                 options=[
                     Option(index=i, text=op)
                     for i, op in enumerate(question_metadata.get("options", []), 1)
                 ],
-                data=data[id],
-                response_ids=data[Identifier.Id][1],
+                sub_items=question_metadata.get("sub_items", []),
             )
             for question_metadata in survey_metadata["questions"]
         ]
